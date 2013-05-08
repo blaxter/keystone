@@ -191,14 +191,16 @@ class S3Token(object):
         try:
             identity_info = jsonutils.loads(output)
             token_id = str(identity_info['access']['token']['id'])
-            tenant = identity_info['access']['token']['tenant']
+            tenant = identity_info['access']['token']['tenant']['id']
+            if isinstance(tenant, unicode):
+                tenant = tenant.encode('utf8')
         except (ValueError, KeyError):
             error = 'Error on keystone reply: %d %s'
             self.logger.debug(error % (resp.status, str(output)))
             return self.deny_request('InvalidURI')(environ, start_response)
 
         req.headers['X-Auth-Token'] = token_id
-        tenant_to_connect = force_tenant or tenant['id']
+        tenant_to_connect = force_tenant or tenant
         self.logger.debug('Connecting with tenant: %s' % (tenant_to_connect))
         new_tenant_name = '%s%s' % (self.reseller_prefix, tenant_to_connect)
         environ['PATH_INFO'] = environ['PATH_INFO'].replace(account,

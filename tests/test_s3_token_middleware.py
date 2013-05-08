@@ -1,4 +1,5 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
+# encoding: utf8
 
 # Copyright 2012 OpenStack LLC
 #
@@ -127,6 +128,13 @@ class S3TokenMiddlewareTestGood(S3TokenMiddlewareTestBase):
         req.get_response(self.middleware)
         self.assertTrue(req.path.startswith('/v1/AUTH_TENANT_ID'))
         self.assertEqual(req.headers['X-Auth-Token'], 'TOKEN_ID')
+
+    def test_path_with_unicode_chars(self):
+        req = webob.Request.blank('/v1/AUTH_cfa/c/á')
+        req.headers['Authorization'] = 'access:signature'
+        req.headers['X-Storage-Token'] = 'token'
+        self.middleware(req.environ, self.start_fake_response)
+        self.assertEqual(self.response_status, 200)
 
     def test_authorized_http(self):
         self.middleware = (
